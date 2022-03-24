@@ -129,16 +129,16 @@ class RoundService {
     })
   }
   
-  scheduleStandingsPost(client, setTimeout = setTimeout) { 
+  scheduleStandingsPost(client, schedule = setTimeout) { 
     console.log('set schedule for tallying scores')
-    if (typeof setTimeout !== 'function') {
-      throw new Error('Expected a function as the second argument to scheduleStandingsPost but received a(n)', typeof setTimeout)
+    if (typeof schedule !== 'function') {
+      throw new Error('Expected a function as the second argument to scheduleStandingsPost but received a(n)', typeof schedule)
     }
     const now = dayjs.tz(dayjs())
     const midnight = now.endOf('date');
     const morning = midnight.add(8, 'hours');
     
-    setTimeout(() => {
+    schedule(() => {
       const {channel, nHoles, holes, standings} = this._model.state;
       console.log('scheduled message at', dayjs.tz(dayjs()).format('lll'))
       const scorecards  = this.tallyAll({holes, standings})
