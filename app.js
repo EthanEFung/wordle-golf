@@ -65,7 +65,7 @@ function recoverRound(app, roundService) {
     }
     if (roundService.isHoleStarted === false) {
       roundService.startHole(scorecardState)
-      roundService.scheduleStandingsPost(client, message.channel)
+      roundService.scheduleStandingsPost(client)
     }
     if (scorecardState.id !== roundService.currentHole) {
       return

@@ -3,7 +3,10 @@ import fs from 'fs';
  * scorecards is a hashmap of wordle ids
  *   with the value of
  */
-class RoundModel {
+class JSONModel {
+  constructor(fileName) {
+    this.fileName = fileName
+  }
   get state() {
     try {
       const state = fs.readFileSync('round.json', { encoding: 'utf-8'})
@@ -31,4 +34,4 @@ class RoundModel {
   }
 }
 
-export default RoundModel;
+export default JSONModel;

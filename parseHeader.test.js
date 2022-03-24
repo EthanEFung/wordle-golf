@@ -1,11 +1,11 @@
 import parseHeader from './parseHeader'
 
-test("it fails if the input does not start with with 'Wordle'", () => {
+it("fails if the input does not start with with 'Wordle'", () => {
   const {valid} = parseHeader('wordle 173 1/6', 173)
   expect(valid).toBeFalsy()
 })
 
-test('it fails if the attempts are invalid', () => {
+it('fails if the attempts are invalid', () => {
   [
     'Wordle 173 -1/6',
     'Wordle 173 0/6',
@@ -18,7 +18,7 @@ test('it fails if the attempts are invalid', () => {
   })
 })
 
-test("happy paths", () => {
+it("happy paths", () => {
   [
     "Wordle 173 1/6",
     "Wordle 173 2/6",

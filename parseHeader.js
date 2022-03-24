@@ -1,7 +1,6 @@
 
 function parseHeader(text) {
   const [name, id, triesOfSix] = text.split(" ")
-  console.log({name, id, triesOfSix})
   if (
     name !== "Wordle" ||
     id === undefined ||

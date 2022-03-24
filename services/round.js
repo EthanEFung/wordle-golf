@@ -1,4 +1,4 @@
-import RoundModel from '../models/round.js';
+import JSONModel from '../models/json.js';
 import inline from '../utils/inline.js';
 import mention from '../utils/mention.js';
 import dayjs from 'dayjs'
@@ -6,14 +6,16 @@ import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
 import localizedFormat from 'dayjs/plugin/localizedFormat.js'
 import relativeTime from 'dayjs/plugin/relativeTime.js'
+
+/* dayjs extensions and configs */
 dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
 dayjs.tz.setDefault('America/Los_Angeles')
 
-console.log('local time', dayjs.tz(dayjs()).format('lll'))
-console.log('midnight', dayjs.tz(dayjs()).endOf('day').format('lll'))
+console.log('current:', dayjs.tz(dayjs()).format('lll'))
+console.log('midnight:', dayjs.tz(dayjs()).endOf('day').format('lll'))
 
 /**
  * @typedef {Object} ScoreState 
@@ -23,7 +25,9 @@ console.log('midnight', dayjs.tz(dayjs()).endOf('day').format('lll'))
  */
 
 class RoundService {
-  _model = new RoundModel()
+  constructor(model = new JSONModel('round.json')) {
+    this._model = model
+  }
   get channel() {
     return this._model.state.channel
   }
@@ -52,7 +56,7 @@ class RoundService {
     await say(`${mention(host)} started a round of 3 hole Wordle golf!\n Submit your wordle results from today to play.`);
   }
 
-  startHole({id} /* scoreState*/, client) {
+  startHole({id} /* scoreState*/) {
     this._model.setState((prev) => {
       return {
         ...prev,
@@ -107,7 +111,7 @@ class RoundService {
       return `${code} brings ${mention(user)}'s final score to ${inline(total)}.\nStandings will be posted in the morning.`
     }
     if (holes.length === 1) {
-      return `${mention(user)} tees off the round with a score of ${code}. ${inline(nHoles - holes.length)} more hole(s) to play.`
+      return `${mention(user)} starts off the round with a score of ${code}. ${inline(nHoles - holes.length)} more hole(s) to play.`
     }
     return `${code} brings ${mention(user)}'s score to ${inline(total)}. ${inline(nHoles - holes.length)} more hole(s) to play.`
   }
@@ -127,6 +131,9 @@ class RoundService {
   
   scheduleStandingsPost(client, setTimeout = setTimeout) { 
     console.log('set schedule for tallying scores')
+    if (typeof setTimeout !== 'function') {
+      throw new Error('Expected a function as the second argument to scheduleStandingsPost but received a(n)', typeof setTimeout)
+    }
     const now = dayjs.tz(dayjs())
     const midnight = now.endOf('date');
     const morning = midnight.add(8, 'hours');
@@ -158,7 +165,6 @@ class RoundService {
       client.chat.scheduleMessage({
         channel,
         post_at: morning.unix(),
-        // post_at: dayjs.tz(dayjs()).add(10, 'seconds').unix(),
         text: post,
       })
     }, midnight.diff(now))
