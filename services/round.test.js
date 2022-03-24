@@ -72,4 +72,46 @@ it('tallys all player scores', () => {
   expect(standingA.total).toBe(7)
   expect(standingB.total).toBe(11)
 })
+
+it('has means to reset the current hole that is being played', () => {
+  const service = new RoundService(new MockModel())
+  service.startRound({user: 'host'}, console.log, 'TEST CHANNEL')
+  service.startHole({ id: 100 })
+  service.recordScore({ user: 'TEST USER', id: 100, score: 3 }, console.log)
+  let expected = {
+    current: 100,
+    standings: {
+      "TEST USER": { "100": 3 }
+    }
+  }
+  let actual = service._model.state
+  expect(actual.current).toBe(expected.current)
+  expect(actual.standings["TEST USER"]["100"]).toBe(expected.standings["TEST USER"]['100'])
+
+  service.resetCurrent()
+  expected = {
+    current: -1,
+    standings: {
+      "TEST USER": { "100": 3 }
+    }
+  }
+  actual = service._model.state
+  expect(actual.current).toBe(-1)
+  expect(actual.current).toBe(expected.current)
+  expect(actual.standings["TEST USER"]["100"]).toBe(expected.standings["TEST USER"]['100'])
+  
+  service.startHole({ id: 101 })
+  service.recordScore({ user: 'TEST USER', id: 101, score: 4 }, console.log)
+  expected = {
+    current: 101,
+    standings: {
+      "TEST USER": { "100": 3, "101": 4 }
+    }
+  }
+  actual = service._model.state
+  expect(actual.current).toBe(101)
+  expect(actual.current).toBe(expected.current)
+  expect(actual.standings["TEST USER"]["100"]).toBe(expected.standings["TEST USER"]['100'])
+  expect(actual.standings["TEST USER"]["101"]).toBe(expected.standings["TEST USER"]['101'])
+})
 it.todo('can schedule a time to tally the scores')

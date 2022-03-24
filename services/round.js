@@ -1,4 +1,5 @@
 import JSONModel from '../models/json.js';
+import MessageService from './message.js'
 import inline from '../utils/inline.js';
 import mention from '../utils/mention.js';
 import dayjs from 'dayjs'
@@ -25,8 +26,9 @@ console.log('midnight:', dayjs.tz(dayjs()).endOf('day').format('lll'))
  */
 
 class RoundService {
-  constructor(model = new JSONModel('round.json')) {
-    this._model = model
+  constructor(model = new JSONModel('round.json'), messenger = new MessageService()) {
+    this._model = model;
+    this._messenger = messenger;
   }
   get channel() {
     return this._model.state.channel
@@ -65,6 +67,14 @@ class RoundService {
       }
     })
   }
+  resetCurrent() {
+    this._model.setState((prev) => {
+      return {
+        ...prev,
+        current: -1,
+      }
+    })
+  }
   /**
    * scheduleScore should ask to the model to
    * save the score of the given user
@@ -82,38 +92,13 @@ class RoundService {
           }
         }
       }
-      const response = [
-        "Genius",
-        "Magnificent",
-        "Impressive",
-        "Splendid",
-        "Great",
-        "Phew",
-        "Better Luck Next Time"
-      ][score-1];
-
-      const scores = this.tally(next, user)
-      say(response + "! " + scores)
+      const post = this._messenger.tallyPost({
+        state: next,
+        user,
+      })
+      say(post)
       return next 
     })
-  }
-  tally({nHoles, holes, standings}, user) {
-    let total = 0
-    const scores = []
-    const scorecard = standings[user]
-    for (const hole of holes) {
-      const score = scorecard[hole] || 7
-      total += score 
-      scores.push(score)
-    }
-    const code = inline(scores.join(' + '))
-    if (nHoles === holes.length) {
-      return `${code} brings ${mention(user)}'s final score to ${inline(total)}.\nStandings will be posted in the morning.`
-    }
-    if (holes.length === 1) {
-      return `${mention(user)} starts off the round with a score of ${code}. ${inline(nHoles - holes.length)} more hole(s) to play.`
-    }
-    return `${code} brings ${mention(user)}'s score to ${inline(total)}. ${inline(nHoles - holes.length)} more hole(s) to play.`
   }
 
   /**
@@ -139,35 +124,27 @@ class RoundService {
     const morning = midnight.add(8, 'hours');
     
     schedule(() => {
+      console.log('tallys and schedules message at', dayjs.tz(dayjs()).format('lll'))
+      // tallys scores and tells slack client to post a message in the morning
+      this.resetCurrent() // make sure that we reset the current to -1 so that the user can start at 12:01AM
       const {channel, nHoles, holes, standings} = this._model.state;
-      console.log('scheduled message at', dayjs.tz(dayjs()).format('lll'))
+
       const scorecards  = this.tallyAll({holes, standings})
-      scorecards.sort(({total: totalA}, {total: totalB}) => {
-        return totalA-totalB
-      })
+      scorecards.sort(({total: a}, {total: b}) => a-b)
 
-      let post = `Good morning! Here are the standings for the round:\n\n` 
-      if (holes.length >= nHoles) {
-        post = `Congrats ${mention(scorecards[0].player)} for winning this round!\n\n`
-      }
-
-      scorecards.forEach(({player, scores, total}, i) => {
-        post += `${mention(player)}: ${inline(scores.join(' + '))} --> ${inline(total)}\n`
-      })
-      post += '\n'
-
-      if (holes.length >= nHoles) {
-        post += 'The round is now over. Well played everyone.'
-      } else {
-        post += `${nHoles - holes.length} more hole(s) are left in the round.`
-      }
+      const text = this._messenger.standingsPost({nHoles, holes, scorecards})
 
       client.chat.scheduleMessage({
         channel,
         post_at: morning.unix(),
-        text: post,
+        text,
       })
     }, midnight.diff(now))
+  }
+
+
+  archiveRound() {
+    this._model.move('')
   }
 }
 
