@@ -4,12 +4,12 @@ import fs from 'fs';
  *   with the value of
  */
 class JSONModel {
-  constructor(fileName) {
+  constructor(fileName = 'round.json') {
     this.fileName = fileName
   }
   get state() {
     try {
-      const state = fs.readFileSync('round.json', { encoding: 'utf-8'})
+      const state = fs.readFileSync(this.fileName, { encoding: 'utf-8'})
       console.count('read')
       return this.deserialize(state)
     } catch {
@@ -22,7 +22,7 @@ class JSONModel {
       throw new Error('Expected a callback to the setState fn but received type:'+typeof callback)
     }
     const state = this.serialize(callback(this.state))
-    fs.writeFileSync('round.json', state)
+    fs.writeFileSync(this.fileName, state)
   }
 
   serialize(state) {
