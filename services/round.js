@@ -133,6 +133,9 @@ class RoundService {
       scorecards.sort(({total: a}, {total: b}) => a-b)
 
       const text = this._messenger.standingsPost({nHoles, holes, scorecards})
+      if (nHoles === holes.length) {
+        this.finish();
+      }
 
       client.chat.scheduleMessage({
         channel,
@@ -142,9 +145,8 @@ class RoundService {
     }, midnight.diff(now))
   }
 
-
-  archiveRound() {
-    this._model.move('')
+  finish() {
+    this._model.remove();
   }
 }
 

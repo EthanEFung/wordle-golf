@@ -32,6 +32,9 @@ class JSONModel {
   deserialize(json) {
     return JSON.parse(json)
   }
+  remove() {
+    fs.unlinkSync(this.fileName)
+  }
 }
 
 export default JSONModel;
