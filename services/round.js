@@ -25,6 +25,14 @@ console.log('midnight:', dayjs.tz(dayjs()).endOf('day').format('lll'))
  * @property {number} score - number representing the score for the hole
  */
 
+/**
+ * @typedef {Object} RoundState
+ * @property {number} current 
+ * @property {string} channel
+ * @property {number} nHoles
+ * @property {Array<number>} holes
+ */
+
 class RoundService {
   constructor(model = new JSONModel('round.json'), messenger = new MessageService()) {
     this._model = model;
@@ -43,7 +51,25 @@ class RoundService {
     return this._model.state.current !== -1
   }
   /**
-   * start begins the round
+   * recover is a method that should only be called when the application
+   * initially loads. recover will check to see if the round has already
+   * started and reschedule the standings post
+   * @param {bolt.App} app - bolt app instance
+   */
+  recover(app) {
+    try {
+      if (this.isHoleStarted) {
+        this.scheduleStandingsPost(app.client)
+      }
+    } catch(e) {
+      console.error('Attempt to recover failed:', e)
+    }
+  }
+  /**
+   * startRound initializes the round of golf
+   * @param {ScoreState} scoreState
+   * @param {bolt.SayFn} say - function that allows bolt app to send messages to channel 
+   * @param {string} channel - slack channel id
    */
   async startRound({ user: host }, say, channel) {
     this._model.setState(() => {
@@ -57,7 +83,10 @@ class RoundService {
     })
     await say(`${mention(host)} started a round of 3 hole Wordle golf!\n Submit your wordle results from today to play.`);
   }
-
+  /**
+   * startHole initializes the current hole and adds the current to the collection of holes
+   * @param {ScoreState} scoreState 
+   */
   startHole({id} /* scoreState*/) {
     this._model.setState((prev) => {
       return {
@@ -67,6 +96,9 @@ class RoundService {
       }
     })
   }
+  /**
+   * resetCurrent changes the current to -1 indicating that the current hole has not started
+   */
   resetCurrent() {
     this._model.setState((prev) => {
       return {
@@ -76,9 +108,10 @@ class RoundService {
     })
   }
   /**
-   * scheduleScore should ask to the model to
-   * save the score of the given user
+   * recordScore adds or edits the standings object with the user hashmap and 
+   * score for the given wordle id
    * @param {ScoreState} scoreState 
+   * @param {bolt.SayFn} say
    */
   recordScore({user, id, score}, say) {
     this._model.setState((prev) => {
@@ -100,10 +133,9 @@ class RoundService {
       return next 
     })
   }
-
   /**
-   * tallyAll is a state reader returns an array of 
-   * player hashes, the scores over the round a the totals 
+   * tallyAll is a state reader that returns an array of 
+   * player hashes, the scores over the round and the totals 
    */
   tallyAll({ holes, standings } = this._model.state) {
     return Object.entries(standings).map(([player, played]) => {
@@ -113,7 +145,14 @@ class RoundService {
       return {player, scores, total: scores.reduce((a, x) => a + x) }
     })
   }
-  
+  /**
+   * scheduleStandingsPost will run a process at midnight PST that gathers the scores
+   * for the day AND schedules a message to be sent in the morning. scheduleStandingsPost
+   * will also reset the hole at midnight and finish the round of golf.
+   * @param {WebClient} client - slack webclient with a `scheduleMessage` method
+   * @param {Function} schedule - function that receives both a callback and a number representing the number
+   * of milliseconds the callback should wait until invoking
+   */
   scheduleStandingsPost(client, schedule = setTimeout) { 
     console.log('set schedule for tallying scores')
     if (typeof schedule !== 'function') {
@@ -144,7 +183,9 @@ class RoundService {
       })
     }, midnight.diff(now))
   }
-
+  /**
+   * finish ends the round of golf
+   */
   finish() {
     this._model.remove();
   }

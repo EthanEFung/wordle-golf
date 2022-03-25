@@ -22,7 +22,7 @@ function validateWordleSubmission(text /* string */) /* boolean */ {
    * matches.
    */
   // validate if the header begins with Wordle
-  const { valid: validHeader, score } = parseHeader(header, /* TODO */ 273)
+  const { valid: validHeader, score } = parseHeader(header)
   if (validHeader === false) {
     console.log('invalid header')
     return false
@@ -35,21 +35,11 @@ function validateWordleSubmission(text /* string */) /* boolean */ {
   return true
 }
 
-function recoverRound(app, roundService) { 
-  try {
-    if (roundService.isHoleStarted === true) {
-      roundService.scheduleStandingsPost(app.client)
-    } 
-  } catch {
-
-  }
-}
-
 (async () => {
   const roundService = new RoundService();
   await app.start(process.env.PORT || 3000);
   console.log('bolt app is running')
-  recoverRound(app, roundService);
+  roundService.recover(app)
   app.message(async function parseWordle({message, say, client, token})  {
     if (validateWordleSubmission(message.text) === false) {
       return
@@ -71,7 +61,6 @@ function recoverRound(app, roundService) {
       return
     }
     roundService.recordScore(scorecardState, say)
-
   })
 })()
 
