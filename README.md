@@ -8,9 +8,10 @@ You have until the end of the day to make a submission, at which each player's s
 
 ## FAQ
 
-### What if I forget to my daily submission for a round when others have submitted?
-### What if I join a round of golf a day or two late? 
+### What if I forget to play a hole when others have?
 If a hole has not been played in the round, then a score of 7 is added to the players scorecard.
+### What if I join a round of golf a day or two late? 
+A score of 7 is added per hole not played
 
 ### What if no one plays one day of wordle?
 Oh..well, Wordle-Bot understands and won't count that day as a hole played. If a round is not finished, Wordle-Bot waits for someone to post a score before assuming users want to progress the round.
