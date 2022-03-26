@@ -2,7 +2,6 @@ import inline from '../utils/inline.js';
 import mention from '../utils/mention.js';
 
 class MessageService {
-
   tallyPost({
     state: {nHoles, holes, standings, current},
     user,
@@ -38,14 +37,13 @@ class MessageService {
     }
     const code = inline(scores.join(' + '))
     if (nHoles === holes.length) {
-      return `${response}! ${code} brings ${mention(user)}'s final score to ${inline(total)}.\nStandings will be posted in the morning.`
+      return `${response}! ${code} brings ${mention(user)}'s final score to ${inline(total)}.\nStandings will be posted tomorrow morning.`
     }
     if (holes.length === 1) {
       return `${response}! ${mention(user)} starts off the round with a score of ${code}. ${inline(nHoles - holes.length)} more hole(s) to play.`
     }
     return `${response}! ${code} brings ${mention(user)}'s score to ${inline(total)}. ${inline(nHoles - holes.length)} more hole(s) to play.`
   }
-
   standingsPost({
     nHoles,
     scorecards,
@@ -73,6 +71,9 @@ class MessageService {
       post += `${nHoles - holes.length} more hole(s) are left in the round.`
     }
     return post
+  }
+  startRoundPost(host) {
+    return `${mention(host)} started a round of 3 hole Wordle golf!\n Submit your wordle results from today to play.`
   }
 }
 

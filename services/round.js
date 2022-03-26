@@ -1,7 +1,5 @@
 import JSONModel from '../models/json.js';
 import MessageService from './message.js'
-import inline from '../utils/inline.js';
-import mention from '../utils/mention.js';
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -57,12 +55,18 @@ class RoundService {
    * @param {bolt.App} app - bolt app instance
    */
   recover(app) {
+    console.log('processing recovery')
     try {
       if (this.isHoleStarted) {
         this.scheduleStandingsPost(app.client)
       }
     } catch(e) {
-      console.error('Attempt to recover failed:', e)
+      if (e instanceof TypeError) {
+        console.error('Attempt to recover failed:','No round state found')
+        return
+      }
+      console.error('Attempt to recover failed:')
+      console.error(e)
     }
   }
   /**
@@ -72,6 +76,7 @@ class RoundService {
    * @param {string} channel - slack channel id
    */
   async startRound({ user: host }, say, channel) {
+    console.log('processing startRound')
     this._model.setState(() => {
       return {
         channel,
@@ -81,13 +86,15 @@ class RoundService {
         standings: {},
       }
     })
-    await say(`${mention(host)} started a round of 3 hole Wordle golf!\n Submit your wordle results from today to play.`);
+    const message = this._messenger.startRoundPost(host)
+    await say(message);
   }
   /**
    * startHole initializes the current hole and adds the current to the collection of holes
    * @param {ScoreState} scoreState 
    */
   startHole({id} /* scoreState*/) {
+    console.log('processing startHole:', id)
     this._model.setState((prev) => {
       return {
         ...prev,
@@ -100,6 +107,7 @@ class RoundService {
    * resetCurrent changes the current to -1 indicating that the current hole has not started
    */
   resetCurrent() {
+    console.log('processing currentReset')
     this._model.setState((prev) => {
       return {
         ...prev,
@@ -114,6 +122,7 @@ class RoundService {
    * @param {bolt.SayFn} say
    */
   recordScore({user, id, score}, say) {
+    console.log('processing recordScore')
     this._model.setState((prev) => {
       const next = {
         ...prev,
@@ -138,6 +147,7 @@ class RoundService {
    * player hashes, the scores over the round and the totals 
    */
   tallyAll({ holes, standings } = this._model.state) {
+    console.log('processing tallyAll')
     return Object.entries(standings).map(([player, played]) => {
       const scores = holes.map((hole) => {
         return played[hole] || 7
@@ -154,7 +164,6 @@ class RoundService {
    * of milliseconds the callback should wait until invoking
    */
   scheduleStandingsPost(client, schedule = setTimeout) { 
-    console.log('set schedule for tallying scores')
     if (typeof schedule !== 'function') {
       throw new Error('Expected a function as the second argument to scheduleStandingsPost but received a(n)', typeof schedule)
     }
@@ -182,11 +191,13 @@ class RoundService {
         text,
       })
     }, midnight.diff(now))
+    console.log('scheduled tallying scores at', midnight.format('lll'))
   }
   /**
    * finish ends the round of golf
    */
   finish() {
+    console.log('processing finish')
     this._model.remove();
   }
 }
