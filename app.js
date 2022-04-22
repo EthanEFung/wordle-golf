@@ -32,7 +32,7 @@ const app = new App({
     if (roundService.isRoundStarted === false) {
       await roundService.startRound(scoreState, say, message.channel)
     }
-    if (roundService.isHoleStarted === false) {
+    if (roundService.shouldStartHole(scoreState.id)) {
       roundService.startHole(scoreState)
       roundService.scheduleStandingsPost(client)
     }

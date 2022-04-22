@@ -48,6 +48,11 @@ class RoundService {
   get isHoleStarted() {
     return this._model.state.current !== -1
   }
+  shouldStartHole(id) {
+    const { current, holes } = this._model.state
+    const last = Math.max(...holes)
+    return current !== -1 && id > last 
+  }
   /**
    * recover is a method that should only be called when the application
    * initially loads. recover will check to see if the round has already
