@@ -51,7 +51,7 @@ class RoundService {
   shouldStartHole(id) {
     const { current, holes } = this._model.state
     const last = Math.max(...holes)
-    return current !== -1 && id > last 
+    return current === -1 && id > last 
   }
   /**
    * recover is a method that should only be called when the application
